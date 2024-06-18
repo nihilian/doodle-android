@@ -247,4 +247,9 @@
   <string name="license_material_icons" translatable="false">Material Design Icons</string>
   <string name="license_material_icons_link" translatable="false">https://github.com/google/material-design-icons</string>
 
+  <!-- TASKER -->
+
+  <string name="tasker_doubletap_activity_name">Double Tap Event</string>
+  <string name="tasker_doubletap_description">Will trigger the Double Tap event</string>
+
 </resources>

@@ -24,6 +24,7 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.KeyguardManager;
 import android.app.WallpaperColors;
+import android.app.WallpaperManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -39,6 +40,7 @@ import android.hardware.SensorManager;
 import android.os.Build;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.PowerManager;
@@ -65,6 +67,7 @@ import xyz.zedler.patrick.doodle.Constants.REQUEST_SOURCE;
 import xyz.zedler.patrick.doodle.Constants.USER_PRESENCE;
 import xyz.zedler.patrick.doodle.R;
 import xyz.zedler.patrick.doodle.drawable.SvgDrawable;
+import xyz.zedler.patrick.doodle.tasker.doubletap.DoubleTap;
 import xyz.zedler.patrick.doodle.util.PrefsUtil;
 import xyz.zedler.patrick.doodle.util.RandomUtil;
 import xyz.zedler.patrick.doodle.wallpaper.BaseWallpaper;
@@ -288,6 +291,7 @@ public class LiveWallpaperService extends WallpaperService {
     private static final int SWIPE_INTENSITY_FACTOR = 100;
     private static final int TILT_INTENSITY_FACTOR = 5;
     private static final int MAX_TILT_HISTORY_SIZE = 30;
+    private static final int DOUBLE_TAP_TIMEOUT_MS = 300;
 
     private Context context;
     private SharedPreferences sharedPrefs;
@@ -303,6 +307,7 @@ public class LiveWallpaperService extends WallpaperService {
     private int screenRotation;
     private int screenOffDelay;
     private long lastFrameDraw;
+    private long lastTapCommand;
     private Display display;
 
     // Appearance
@@ -440,6 +445,8 @@ public class LiveWallpaperService extends WallpaperService {
       // This starts the zoom effect already in wallpaper preview
       zoomUnlock = shouldZoomInWhenLocked ? -1 : 1;
       animateZoom(0);
+
+      lastTapCommand = 0;
 
       // After all necessary variables have been set
       screenStateListener = this;
@@ -683,6 +690,20 @@ public class LiveWallpaperService extends WallpaperService {
       if (isNightMode != isNightMode()) {
         loadThemeOnly();
       }
+    }
+
+    @Override
+    public Bundle onCommand(String action, int x, int y, int z, Bundle extras, boolean resultRequested) {
+      if (action.equals(WallpaperManager.COMMAND_TAP)) {
+        long tapTime = System.currentTimeMillis();
+        if (tapTime - lastTapCommand <= DOUBLE_TAP_TIMEOUT_MS) {
+          DoubleTap.triggerEvent(getApplicationContext());
+          lastTapCommand = 0;
+        } else {
+          lastTapCommand = tapTime;
+        }
+      }
+      return super.onCommand(action, x, y, z, extras, resultRequested);
     }
 
     /**
